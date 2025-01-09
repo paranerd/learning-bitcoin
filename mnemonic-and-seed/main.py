@@ -1,8 +1,9 @@
 import random
-from hashlib import sha256
+from hashlib import pbkdf2_hmac, sha256
 
 WORDLIST_FILENAME = 'bip39-wordlist.txt'
-SEED_SIZE = 64
+SEED_SIZE_BIT = 64
+PASSPHRASE = '[passphrasegoeshere]'
 
 def generate_entropy(length):
   return ''.join([str(random.randint(0, 1)) for i in range(length)])
@@ -18,7 +19,7 @@ def load_wordlist(filename):
   with open(filename, 'r') as f:
     return f.read().splitlines()
 
-def generate_seed_phrase(chunks):
+def generate_mnemonic(chunks):
   wordlist = load_wordlist(WORDLIST_FILENAME)
   seed = []
 
@@ -28,13 +29,22 @@ def generate_seed_phrase(chunks):
 
   return ' '.join(seed)
 
+def calculate_fingerprint(entropy):
+  return sha256(entropy.encode('utf-8')).hexdigest()
+
+def generate_salt(passphrase):
+  return ('mnemonic' + passphrase).encode('utf-8')
+
+def generate_seed(mnemonic):
+  return pbkdf2_hmac('sha512', mnemonic.encode('utf-8'), salt, 2048)
+
 if __name__ == "__main__":
   # Generate entropy
-  entropy = generate_entropy(SEED_SIZE)
+  entropy = generate_entropy(SEED_SIZE_BIT)
   print(f'Entropy: {entropy}')
 
   # Calculate fingerprint
-  fingerprint_hex = sha256(entropy.encode('utf-8')).hexdigest()
+  fingerprint_hex = calculate_fingerprint(entropy)
   print(f'Fingerprint: {fingerprint_hex}')
 
   fingerprint_binary = hex_to_binary(fingerprint_hex)
@@ -51,9 +61,16 @@ if __name__ == "__main__":
   entropy_with_checksum = entropy + checksum
   print(f'Entropy with checksum: {entropy_with_checksum}')
 
+  # Chunk to 11 bits
   chunks = split_list(entropy_with_checksum, 11)
   print(f'Chunks: {chunks}')
 
-  seed_phrase = generate_seed_phrase(chunks)
+  # Generate mnemonic
+  mnemonic = generate_mnemonic(chunks)
   print()
-  print(f'Seed phrase: {seed_phrase}')
+  print(f'Mnemonic: {mnemonic}')
+
+  # Generate seed
+  salt = generate_salt(PASSPHRASE)
+  seed = generate_seed(mnemonic)
+  print(f'Seed: {seed.hex()}')
