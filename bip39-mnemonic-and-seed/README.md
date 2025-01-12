@@ -1,5 +1,7 @@
 # How to create a BIP 39 mnemonic sentence and seed
 
+The "official" Python implementation can be found [here](https://github.com/trezor/python-mnemonic/blob/master/src/mnemonic/mnemonic.py).
+
 1. Generate random 64 bits of entropy
 1. Calculate entropy's fingerprint using SHA256
 1. Add checksum from fingerprint to entropy
