@@ -98,54 +98,58 @@ To verify an ECDSA signature, we need to calculate a point on the curve and show
 
 If the the nonce is used in two signatures for two distinct messages but with the same private key, then that private key is revealed.
 
-### Calculating the nonce
+### Calcule the nonce
 
-Starting off with the formula to compute a signature:
+1. Starting off with the formula to compute a signature
 
-$s = \frac{z + xr}{k}$
+    $s = \frac{z + xr}{k}$
 
-=> Multiply with $k$:
+1. Multiply with $k$:
 
-$s * k = z + xr$
+    $s * k = z + xr$
 
-=> Subtract $z$:
+1. Subtract $z$:
 
-$(s * k) - z = xr$
+    $(s * k) - z = xr$
 
-=> Do the same for a second signature:
+1. Do the same for a second signature:
 
-$(s_2 * k) - z_2 = xr$
+    $(s_2 * k) - z_2 = xr$
 
-=> Set both equal because we expect x to be equal and the $r$ values of two signatures are identical if the same $k$ is used:
+1. Set both equal
 
-$(s_1 * k) - z_1 = (s_2 * k) - z_2$
+    Because we expect $x$ to be equal and the $r$ values of two signatures are identical if the same $k$ is used:
 
-=> Subtract $z_1$ and $(s_2 * k)$ to swap sides:
+    $(s_1 * k) - z_1 = (s_2 * k) - z_2$
 
-$(s_1 * k) - (s_2 * k) = z_1 - z_2$
+1. Subtract $z_1$ and $(s_2 * k)$ to swap sides:
 
-=> Get $k$ out of the parantheses:
+    $(s_1 * k) - (s_2 * k) = z_1 - z_2$
 
-$(s_1 - s_2) * k = z_1 - z_2$
+1. Get $k$ out of the parantheses:
 
-=> Divide by $(s_1 - s_2)$:
+    $(s_1 - s_2) * k = z_1 - z_2$
 
-$k = \frac{z_1 - z_2}{s_1 - s_2}$
+1. Divide by $(s_1 - s_2)$:
+
+    $k = \frac{z_1 - z_2}{s_1 - s_2}$
 
 ### Use the nonce to calculate the private key
 
-Again, starting off with the formula to compute a signature (this time solving for $x$):
+1. Again, starting off with the formula to compute a signature
 
-$s = \frac{z + xr}{k}$
+    This time eventually solving for $x$
 
-=> Multiply with $k$:
+    $s = \frac{z + xr}{k}$
 
-$s * k = z + xr$
+1. Multiply with $k$:
 
-=> Subtract $z$
+    $s * k = z + xr$
 
-$(s * k) - z = xr$
+1. Subtract $z$
 
-=> Divide by $r$
+    $(s * k) - z = xr$
 
-$x = \frac{(s * k) - z}{r}$
+1. Divide by $r$
+
+    $x = \frac{(s * k) - z}{r}$
