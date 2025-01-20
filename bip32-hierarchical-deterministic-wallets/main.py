@@ -3,25 +3,11 @@ import ecdsa
 import hashlib
 import hmac
 
-DEFAULT_SEED = '5b7832b844ed7c613d9a93e7272a77788aa4a38facc8df925e890c41869570196f0679d0830d0e3285df076a05540feff16c877b2a56f3890758bdee1d16555f'
+DEFAULT_SEED = '67f93560761e20617de26e0cb84f7234aaf373ed2e66295c3d7397e6d7ebe882ea396d5d293808b0defd7edd2babd4c091ad942e6a9351e6d075a29d4df872af'
 DEFAULT_CHILD_INDEX = 0
 
 def generate_master_extended_key(seed):
   return hmac.new(b'Bitcoin seed', bytes.fromhex(seed), hashlib.sha512).hexdigest()
-
-def generate_master_public_key(master_private_key):
-  # Convert master private key to an ECDSA private key object
-  master_private_key_bytes = bytes.fromhex(master_private_key) 
-  signing_key = ecdsa.SigningKey.from_string(master_private_key_bytes, curve=ecdsa.SECP256k1)  
-
-  # Get the corresponding ECDSA public key object
-  verifying_key = signing_key.get_verifying_key()
-
-  # Serialize the public key to bytes
-  master_public_key_bytes = verifying_key.to_string("compressed")
-
-  # Convert to hexadecimal
-  return master_public_key_bytes.hex()
 
 def generate_master_intermediate_key(master_public_key, master_chain_code, index):
   data = int(master_public_key, 16) + index
@@ -62,16 +48,30 @@ def generate_child_private_key(il: str, parent_private_key_bytes: bytes):
     
     return child_private_key.to_bytes(32, 'big')
 
-def generate_child_public_key(child_private_key_bytes):
-    signing_key = ecdsa.SigningKey.from_string(child_private_key_bytes, curve=ecdsa.SECP256k1)  
+def derive_public_key(private_key: bytes):
+    '''
+    Derives the public key from the private key by multiplying the private key with the SECP256k1 generator point (d * G).
 
+    Args:
+        private_key: The private key as bytes.
+
+    Returns:
+        The public key as hex.
+
+    Built-in alternative:
     # Get the corresponding ECDSA public key object
-    verifying_key = signing_key.get_verifying_key()
+    public_key = signing_key.get_verifying_key()
 
     # Serialize the public key to bytes
-    child_public_key_bytes = verifying_key.to_string("compressed")
+    public_key_bytes = public_key.to_string("compressed")
+    '''
+    signing_key = ecdsa.SigningKey.from_string(private_key, curve=ecdsa.SECP256k1)
 
-    return child_public_key_bytes
+    # Derive public key using Q = (d * G):
+    public_key = signing_key.privkey.secret_multiplier * ecdsa.SECP256k1.generator
+    public_key_bytes = public_key._compressed_encode()
+
+    return public_key_bytes.hex()
 
 def derive_child_keys(parent_private_key, parent_public_key, parent_chain_code, index):
     # Convert from hex to bytes
@@ -86,9 +86,9 @@ def derive_child_keys(parent_private_key, parent_public_key, parent_chain_code, 
     child_private_key_bytes = generate_child_private_key(il, parent_private_key_bytes)
 
     # Generate Public Key
-    child_public_key_bytes = generate_child_public_key(child_private_key_bytes)
+    child_public_key = derive_public_key(child_private_key_bytes)
 
-    return (child_private_key_bytes.hex(), child_public_key_bytes.hex(), child_chain_code)
+    return (child_private_key_bytes.hex(), child_public_key, child_chain_code)
 
 def generate_master_keys(seed):
   # Generate Master extended key
@@ -99,12 +99,14 @@ def generate_master_keys(seed):
   master_chain_code = master_extended_key[64:]
 
   # Derive Master public key from Master private key
-  master_public_key = generate_master_public_key(master_private_key)
+  master_public_key = derive_public_key(bytes.fromhex(master_private_key))
+  print(f'Master public key: {master_public_key}')
 
   return (master_extended_key, master_private_key, master_chain_code, master_public_key)
 
 def parse_arguments():
-  parser = argparse.ArgumentParser(description='Short sample app')
+  parser = argparse.ArgumentParser(description='Bitcoin HD Wallets')
+
   parser.add_argument('--seed', action="store", dest='seed', type=str, default=DEFAULT_SEED)
   parser.add_argument('--child_index', action="store", dest='child_index', type=int, default=DEFAULT_CHILD_INDEX)
 
