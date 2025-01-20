@@ -2,6 +2,8 @@
 
 This tool demonstrates how to generate extended keys from a given seed.
 
+[Source]
+(https://learnmeabitcoin.com/technical/keys/hd-wallets/extended-keys/)
 ## Usage
 
 ```bash
